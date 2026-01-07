@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Laporan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white min-h-screen text-slate-800 font-sans">
+    <nav class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100">
+        <div class="container mx-auto px-4 h-16 flex items-center justify-between">
+            <button onclick="history.back()" class="flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold transition-all text-sm group">
+                <span class="group-hover:-translate-x-1 transition-transform">←</span> Kembali
+            </button>
+            <div class="text-[10px] font-black text-slate-300 uppercase tracking-widest">Detail Laporan</div>
+            <div class="w-10"></div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-12 max-w-4xl animate-in fade-in slide-in-from-bottom-6 duration-700">
+        <div class="text-center mb-12">
+            <div class="inline-flex items-center gap-2 mb-4">
+                <span id="owner" class="bg-slate-900 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-xl shadow-slate-200"></span>
+                <span class="text-slate-300">•</span>
+                <span id="date" class="text-[10px] text-slate-400 font-bold tracking-widest uppercase"></span>
+            </div>
+            <h1 id="judul" class="text-4xl md:text-5xl font-black text-slate-900 leading-tight max-w-3xl mx-auto"></h1>
+        </div>
+
+        <!-- Media Center -->
+        <div class="mb-12 rounded-[2.5rem] overflow-hidden bg-slate-50 shadow-2xl shadow-slate-200/50 border border-slate-100">
+            <img id="image" src="" alt="Lampiran Visual" class="w-full h-auto max-h-[75vh] object-contain mx-auto block">
+        </div>
+
+        <!-- Content -->
+        <div class="max-w-2xl mx-auto">
+            <div class="flex items-center gap-4 mb-8">
+                <div class="w-12 h-1 bg-blue-600 rounded-full"></div>
+                <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Deskripsi Lengkap</div>
+            </div>
+            <div id="deskripsi" class="text-slate-600 text-lg leading-relaxed font-medium whitespace-pre-wrap"></div>
+        </div>
+    </main>
+
+    <footer class="mt-20 py-10 border-t border-slate-50 text-center">
+        <p class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Sistem Pelaporan Transparan &copy; 2026</p>
+    </footer>
+
+    <script>
+        const data = JSON.parse(localStorage.getItem('selected_activity'));
+        if (!data) window.location.href = 'index.html';
+        else {
+            document.getElementById('judul').innerText = data.judul;
+            document.getElementById('deskripsi').innerText = data.deskripsi;
+            document.getElementById('owner').innerText = data.display_owner;
+            document.getElementById('image').src = data.imageurl || 'https://via.placeholder.com/1200x800?text=Tanpa+Lampiran';
+            document.getElementById('date').innerText = new Date(data.waktu).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            document.title = data.judul + " - Detail Laporan";
+        }
+    </script>
+</body>
+</html>

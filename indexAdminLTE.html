@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Kontrol - LogAktivitas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .active-menu { background-color: rgba(59, 130, 246, 0.1); color: #2563eb; border-right: 4px solid #2563eb; }
+        .modal-blur { backdrop-filter: blur(4px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased overflow-hidden">
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="sidebar-transition fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform -translate-x-full lg:translate-x-0 lg:relative flex flex-col">
+            <!-- Sidebar Header -->
+            <div class="h-20 flex items-center px-6 border-b border-slate-100 flex-shrink-0">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-black shadow-lg shadow-blue-200 mr-3">L</div>
+                <span class="font-extrabold text-xl tracking-tight text-slate-800">AdminPanel</span>
+            </div>
+
+            <!-- Profile Mini -->
+            <div class="p-6 border-b border-slate-50 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-slate-100 border-2 border-white shadow-sm flex items-center justify-center font-bold text-blue-600" id="user-avatar-initial">?</div>
+                <div class="overflow-hidden">
+                    <p class="text-xs font-bold text-slate-900 truncate" id="side-user-name">Memuat...</p>
+                    <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider" id="side-user-role">Role</p>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-grow p-4 space-y-2 overflow-y-auto custom-scrollbar">
+                <p class="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Utama</p>
+                <button onclick="switchTab('laporan')" id="nav-laporan" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all active-menu">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    Laporan Aktivitas
+                </button>
+                <div id="admin-nav-group" class="hidden pt-4 space-y-2">
+                    <p class="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Pengaturan</p>
+                    <button onclick="switchTab('users')" id="nav-users" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        Manajemen User
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="p-4 border-t border-slate-100">
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-red-500 bg-red-50 hover:bg-red-100 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    Keluar Sesi
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <div class="flex-grow flex flex-col min-w-0">
+            <!-- Header Nav -->
+            <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0 z-40">
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleSidebar()" class="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                    <h2 id="page-title" class="text-lg font-bold text-slate-800">Daftar Laporan</h2>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="loading-spinner" class="hidden w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-200 flex items-center gap-2">
+                        <span class="text-lg leading-none">+</span> Buat Laporan
+                    </button>
+                </div>
+            </header>
+
+            <!-- Scrollable Content -->
+            <main class="flex-grow overflow-y-auto p-6 md:p-8 custom-scrollbar">
+                
+                <!-- Tab: Laporan -->
+                <div id="tab-laporan" class="space-y-6">
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden group">
+                            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+                                <svg class="w-16 h-16 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path></svg>
+                            </div>
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total Entri</p>
+                            <h3 id="stat-total" class="text-3xl font-black text-slate-800 tracking-tight">0</h3>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Nama Lengkap</p>
+                            <h3 id="stat-name" class="text-lg font-bold text-slate-800 truncate">-</h3>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">ID Akun</p>
+                            <h3 id="stat-username" class="text-lg font-bold text-slate-800 truncate">@_</h3>
+                        </div>
+                    </div>
+
+                    <!-- Table Laporan -->
+                    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-50/50 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                    <tr>
+                                        <th class="px-6 py-4">Visual</th>
+                                        <th class="px-6 py-4">Keterangan</th>
+                                        <th class="px-6 py-4">Waktu & Penulis</th>
+                                        <th class="px-6 py-4 text-right">Opsi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body" class="divide-y divide-slate-100">
+                                    <tr><td colspan="4" class="p-20 text-center italic text-slate-400">Memuat data...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Users -->
+                <div id="tab-users" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800">Daftar Pengguna Sistem</h3>
+                        <button onclick="openUserModal()" class="bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold">Tambah User</button>
+                    </div>
+                    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-800 text-white text-[10px] uppercase font-bold tracking-widest">
+                                <tr>
+                                    <th class="p-5">Nama Lengkap</th>
+                                    <th class="p-5">ID / Username</th>
+                                    <th class="p-5">Peran</th>
+                                    <th class="p-5 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL LAPORAN -->
+    <div id="data-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-slate-900/60 modal-blur" onclick="closeModal()"></div>
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl relative z-10 p-8 transform scale-95 opacity-0 transition-all duration-300">
+            <h3 id="modal-title" class="text-2xl font-black mb-6 text-slate-900">Tambah Laporan</h3>
+            <form id="main-form" class="space-y-4">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Judul Aktivitas</label>
+                    <input type="text" id="judul" required class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Deskripsi Detail</label>
+                    <textarea id="deskripsi" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl h-32 outline-none focus:border-blue-500 transition-all"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Tanggal & Waktu</label>
+                        <input type="datetime-local" id="waktu" required class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 ml-1">Lampiran Foto</label>
+                        <div class="relative h-full">
+                            <input type="file" id="image-input" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-20">
+                            <div class="w-full h-[58px] bg-slate-100 rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center text-xs font-bold text-slate-500 group-hover:bg-slate-200">
+                                Pilih File
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-6">
+                    <button type="button" onclick="closeModal()" class="flex-1 py-4 font-bold text-slate-400 hover:text-slate-600 transition-all">Batalkan</button>
+                    <button type="submit" id="btn-submit" class="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-xl shadow-blue-200">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL USER -->
+    <div id="user-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-slate-900/60 modal-blur" onclick="closeUserModal()"></div>
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl relative z-10 p-8 transform scale-95 opacity-0 transition-all duration-300">
+            <h3 id="user-modal-title" class="text-xl font-bold mb-6 text-slate-900">Editor Pengguna</h3>
+            <form id="user-form" class="space-y-4">
+                <input type="hidden" id="old-username">
+                <input type="text" id="user-nama" placeholder="Nama Lengkap" required class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-slate-800">
+                <input type="text" id="user-username" placeholder="Username / ID" required class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-slate-800">
+                <input type="password" id="user-password" placeholder="Password Baru (Opsional)" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-slate-800">
+                <select id="user-role" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none appearance-none font-semibold">
+                    <option value="User">Akses Konten (User)</option>
+                    <option value="Admin">Akses Penuh (Admin)</option>
+                </select>
+                <div class="flex gap-2 pt-4">
+                    <button type="button" onclick="closeUserModal()" class="flex-1 py-4 font-bold text-slate-400">Batal</button>
+                    <button type="submit" id="btn-user-submit" class="flex-[2] bg-slate-900 text-white py-4 rounded-2xl font-bold shadow-xl shadow-slate-200">Simpan Akun</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxUCiEzApV6XBTB9OIzTJ0ffK0x8sMmgTDPri_haTsJdMCZgRzUCQ10QrgAPr7LJPSV/exec'; // Ganti dengan URL Web App Anda
+        const session = JSON.parse(localStorage.getItem('user_session'));
+        let base64Image = "";
+
+        // PROTEKSI HALAMAN
+        if (!session) window.location.href = 'admin.html';
+
+        // INISIALISASI TAMPILAN
+        document.getElementById('side-user-name').innerText = session.namaLengkap;
+        document.getElementById('side-user-role').innerText = session.role;
+        document.getElementById('stat-name').innerText = session.namaLengkap;
+        document.getElementById('stat-username').innerText = '@' + session.username;
+        document.getElementById('user-avatar-initial').innerText = session.namaLengkap.charAt(0).toUpperCase();
+
+        if (session.role === 'Admin') {
+            document.getElementById('admin-nav-group').classList.remove('hidden');
+        }
+
+        // FUNGSI NAVIGASI TAB
+        function switchTab(tab) {
+            document.getElementById('tab-laporan').classList.toggle('hidden', tab !== 'laporan');
+            document.getElementById('tab-users').classList.toggle('hidden', tab !== 'users');
+            document.getElementById('page-title').innerText = tab === 'laporan' ? 'Daftar Laporan' : 'Manajemen Pengguna';
+            
+            document.getElementById('nav-laporan').classList.toggle('active-menu', tab === 'laporan');
+            document.getElementById('nav-users').classList.toggle('active-menu', tab === 'users');
+
+            if (tab === 'users') loadUsers();
+            if (window.innerWidth < 1024) toggleSidebar();
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            sb.classList.toggle('-translate-x-full');
+        }
+
+        // CRUD LAPORAN
+        async function loadData() {
+            showLoading(true);
+            const tbody = document.getElementById('table-body');
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'read', session }) });
+                const json = await res.json();
+                document.getElementById('stat-total').innerText = json.data.length;
+                tbody.innerHTML = json.data.map(item => `
+                    <tr class="hover:bg-slate-50 transition-all">
+                        <td class="px-6 py-4 w-24">
+                            <img src="${item.imageurl || 'https://via.placeholder.com/150'}" class="w-12 h-12 object-cover rounded-xl shadow-sm border border-slate-100">
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="font-bold text-slate-800 text-sm mb-0.5">${item.judul}</p>
+                            <p class="text-xs text-slate-400 line-clamp-1">${item.deskripsi || '-'}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <span class="text-[11px] font-bold text-slate-500">${new Date(item.waktu).toLocaleString('id-ID')}</span>
+                                <span class="text-[10px] font-medium text-blue-500 uppercase tracking-tight">👤 ${item.display_owner}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <button onclick="openModal('${item.id}', '${encodeURIComponent(item.judul)}', '${encodeURIComponent(item.deskripsi)}', '${item.waktu}')" class="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-600 hover:text-white transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                </button>
+                                <button onclick="deleteData('${item.id}')" class="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-600 hover:text-white transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+                if(json.data.length === 0) tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-slate-400">Kosong</td></tr>';
+            } catch(e) { tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-red-500">Gagal memuat</td></tr>'; }
+            showLoading(false);
+        }
+
+        // CRUD USERS (ADMIN)
+        async function loadUsers() {
+            if (session.role !== 'Admin') return;
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'readUsers', session }) });
+            const json = await res.json();
+            document.getElementById('user-table-body').innerHTML = json.data.map(u => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-5 font-bold text-slate-700 text-sm">${u.namaLengkap}</td>
+                    <td class="p-5 text-slate-400 text-sm">${u.username}</td>
+                    <td class="p-5">
+                        <span class="px-2 py-1 text-[9px] font-black uppercase tracking-widest rounded-lg ${u.role === 'Admin' ? 'bg-slate-800 text-white' : 'bg-blue-100 text-blue-600'}">${u.role}</span>
+                    </td>
+                    <td class="p-5 text-right flex justify-end gap-2">
+                        <button onclick="openUserModal('${u.username}', '${encodeURIComponent(u.namaLengkap)}', '${u.role}')" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">Edit</button>
+                        ${u.username !== session.username ? `<button onclick="deleteUser('${u.username}')" class="text-xs font-bold text-red-600 bg-red-50 px-3 py-2 rounded-lg">Hapus</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // LOGIKA MODAL LAPORAN
+        function openModal(id='', j='', d='', w='') {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('judul').value = id ? decodeURIComponent(j) : '';
+            document.getElementById('deskripsi').value = id ? decodeURIComponent(d) : '';
+            document.getElementById('waktu').value = w || '';
+            document.getElementById('modal-title').innerText = id ? 'Edit Laporan' : 'Laporan Baru';
+            const m = document.getElementById('data-modal');
+            m.classList.remove('hidden');
+            setTimeout(() => m.querySelector('.bg-white').classList.add('scale-100', 'opacity-100'), 10);
+        }
+
+        function closeModal() {
+            const m = document.getElementById('data-modal');
+            m.querySelector('.bg-white').classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => { m.classList.add('hidden'); document.getElementById('main-form').reset(); base64Image = ""; }, 300);
+        }
+
+        // HANDLERS
+        document.getElementById('main-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const btn = document.getElementById('btn-submit');
+            btn.disabled = true; btn.innerText = "Mengunggah...";
+            
+            const payload = {
+                action: id ? 'update' : 'create', id, session,
+                data: { judul: document.getElementById('judul').value, deskripsi: document.getElementById('deskripsi').value, waktu: document.getElementById('waktu').value, image: base64Image, mimeType: 'image/webp' }
+            };
+
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+            closeModal();
+            loadData();
+            btn.disabled = false; btn.innerText = "Simpan Data";
+        };
+
+        // IMAGE PROCESSING (WebP Compression)
+        document.getElementById('image-input').onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const max = 1000; let w = img.width, h = img.height;
+                    if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    base64Image = canvas.toDataURL('image/webp', 0.8);
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        // USER MODAL LOGIC
+        function openUserModal(u='', n='', r='User') {
+            document.getElementById('old-username').value = u;
+            document.getElementById('user-username').value = u;
+            document.getElementById('user-nama').value = n ? decodeURIComponent(n) : '';
+            document.getElementById('user-role').value = r;
+            const m = document.getElementById('user-modal');
+            m.classList.remove('hidden');
+            setTimeout(() => m.querySelector('.bg-white').classList.add('scale-100', 'opacity-100'), 10);
+        }
+
+        function closeUserModal() {
+            const m = document.getElementById('user-modal');
+            m.querySelector('.bg-white').classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => m.classList.add('hidden'), 300);
+        }
+
+        document.getElementById('user-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const oldU = document.getElementById('old-username').value;
+            const payload = {
+                action: oldU ? 'adminUpdateUser' : 'adminAddUser', username: oldU, session,
+                data: { username: document.getElementById('user-username').value, namaLengkap: document.getElementById('user-nama').value, password: document.getElementById('user-password').value, role: document.getElementById('user-role').value }
+            };
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+            const json = await res.json();
+            if (json.success) { closeUserModal(); loadUsers(); } else alert(json.message);
+        };
+
+        // UTILS
+        function showLoading(show) { document.getElementById('loading-spinner').classList.toggle('hidden', !show); }
+        async function deleteData(id) { if(confirm('Hapus laporan ini?')) { await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id, session }) }); loadData(); } }
+        async function deleteUser(u) { if(confirm('Hapus user ini?')) { await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'adminDeleteUser', username: u, session }) }); loadUsers(); } }
+        function logout() { localStorage.removeItem('user_session'); window.location.href = 'admin.html'; }
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>

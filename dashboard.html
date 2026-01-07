@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .modal-active { overflow: hidden; }
+        .modal-show { opacity: 1 !important; transform: scale(1) !important; pointer-events: auto !important; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-slate-800 font-sans">
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-slate-200 p-4 sticky top-0 z-40 shadow-sm">
+        <div class="container mx-auto flex justify-between items-center px-2">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white p-2 rounded-lg font-bold shadow-md shadow-blue-100">LA</div>
+                <h1 class="font-bold text-slate-800 hidden md:block">Dashboard <span id="user-role-badge" class="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded ml-2 border border-slate-200"></span></h1>
+            </div>
+            <div class="flex gap-2 items-center">
+                <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-100">+ Laporan</button>
+                <button id="btn-manage-users" onclick="openUserModal()" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all hidden">User</button>
+                <button onclick="logout()" class="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 max-w-6xl">
+        <!-- Statistik -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Nama Pengguna</p>
+                <h3 id="stat-name" class="text-xl font-bold text-slate-800 truncate">-</h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Laporan</p>
+                <h3 id="stat-total" class="text-2xl font-bold text-blue-600">0</h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">ID Akun</p>
+                <h3 id="stat-user" class="text-xl font-bold text-slate-800 truncate">-</h3>
+            </div>
+        </div>
+
+        <!-- Tabel Laporan -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden mb-10">
+            <div class="p-5 border-b flex justify-between items-center bg-slate-50/50">
+                <h2 class="font-bold text-slate-700">Arsip Laporan</h2>
+                <button onclick="loadData()" class="text-blue-500 hover:rotate-180 transition-all duration-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-[10px] text-slate-400 uppercase font-bold tracking-widest">
+                        <tr>
+                            <th class="p-5">Visual</th>
+                            <th class="p-5">Keterangan Laporan</th>
+                            <th class="p-5 text-right">Tindakan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-slate-100">
+                        <tr><td colspan="3" class="p-20 text-center text-slate-300 italic">Menyiapkan data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Manajemen User (Khusus Admin) -->
+        <div id="admin-user-section" class="hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h2 class="text-xl font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                <span class="w-2 h-6 bg-blue-600 rounded-full"></span> Manajemen User
+            </h2>
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-800 text-white text-[10px] uppercase font-bold tracking-widest">
+                        <tr>
+                            <th class="p-5">Nama Lengkap</th>
+                            <th class="p-5">ID Pengguna</th>
+                            <th class="p-5">Role</th>
+                            <th class="p-5 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-table-body" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LAPORAN -->
+    <div id="data-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl relative z-10 p-8 transform scale-95 opacity-0 transition-all duration-300">
+            <h3 id="modal-title" class="text-2xl font-bold mb-6 text-slate-800">Tambah Laporan</h3>
+            <form id="main-form" class="space-y-4">
+                <input type="hidden" id="edit-id">
+                <input type="text" id="judul" placeholder="Judul Aktivitas" required class="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all">
+                <textarea id="deskripsi" placeholder="Ceritakan detail aktivitas..." class="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl h-32 outline-none focus:border-blue-500 transition-all"></textarea>
+                <input type="datetime-local" id="waktu" required class="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all">
+                <div class="group relative p-4 border-2 border-dashed border-slate-200 rounded-2xl text-center hover:border-blue-400 transition-all">
+                    <input type="file" id="image-input" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer">
+                    <p class="text-xs text-slate-400 font-medium">Klik untuk upload foto (WebP diaktifkan)</p>
+                </div>
+                <div class="flex gap-2 pt-4">
+                    <button type="button" onclick="closeModal()" class="flex-1 py-4 border-2 border-slate-100 rounded-2xl font-bold text-slate-400 hover:bg-slate-50 transition-all">Batal</button>
+                    <button type="submit" id="btn-submit" class="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200">Simpan Laporan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL USER -->
+    <div id="user-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeUserModal()"></div>
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl relative z-10 p-8 transform scale-95 opacity-0 transition-all duration-300">
+            <h3 id="user-modal-title" class="text-2xl font-bold mb-6 text-slate-800">Manajemen Pengguna</h3>
+            <form id="user-form" class="space-y-4">
+                <input type="hidden" id="old-username">
+                <input type="text" id="user-nama" placeholder="Nama Lengkap" required class="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none">
+                <input type="text" id="user-username" placeholder="Username" required class="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none">
+                <input type="password" id="user-password" placeholder="Password (Kosongi jika tak diubah)" class="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none">
+                <select id="user-role" class="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none">
+                    <option value="User">Akses User</option>
+                    <option value="Admin">Akses Admin</option>
+                </select>
+                <div class="flex gap-2 pt-4">
+                    <button type="button" onclick="closeUserModal()" class="flex-1 py-4 border-2 border-slate-100 rounded-2xl font-bold text-slate-400">Batal</button>
+                    <button type="submit" id="btn-user-submit" class="flex-[2] bg-slate-800 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 shadow-lg shadow-slate-200">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxUCiEzApV6XBTB9OIzTJ0ffK0x8sMmgTDPri_haTsJdMCZgRzUCQ10QrgAPr7LJPSV/exec';
+        const session = JSON.parse(localStorage.getItem('user_session'));
+        let base64Image = "";
+
+        if (!session) window.location.href = 'admin.html';
+
+        document.getElementById('user-role-badge').innerText = session.role;
+        document.getElementById('stat-name').innerText = session.namaLengkap;
+        document.getElementById('stat-user').innerText = session.username;
+
+        if (session.role === 'Admin') {
+            document.getElementById('btn-manage-users').classList.remove('hidden');
+            document.getElementById('admin-user-section').classList.remove('hidden');
+            loadUsers();
+        }
+
+        async function loadData() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '<tr><td colspan="3" class="p-20 text-center"><div class="animate-spin inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div></td></tr>';
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'read', session }) });
+            const json = await res.json();
+            document.getElementById('stat-total').innerText = json.data.length;
+            tbody.innerHTML = json.data.length === 0 ? '<tr><td colspan="3" class="p-10 text-center text-slate-400">Belum ada laporan terkini.</td></tr>' : json.data.map(item => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="p-5 w-24"><img src="${item.imageurl || 'https://via.placeholder.com/150'}" class="w-14 h-14 object-cover rounded-2xl shadow-sm border border-slate-100"></td>
+                    <td class="p-5">
+                        <div class="font-bold text-slate-800 text-base mb-1">${item.judul}</div>
+                        <div class="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                            <span>${new Date(item.waktu).toLocaleString('id-ID')}</span>
+                            <span class="text-blue-500">👤 ${item.display_owner}</span>
+                        </div>
+                    </td>
+                    <td class="p-5 text-right">
+                        <div class="flex justify-end gap-1">
+                            <button onclick="openModal('${item.id}', '${encodeURIComponent(item.judul)}', '${encodeURIComponent(item.deskripsi)}', '${item.waktu}')" class="p-2 text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-600 hover:text-white transition-all">Edit</button>
+                            <button onclick="deleteData('${item.id}')" class="p-2 text-red-600 bg-red-50 rounded-xl hover:bg-red-600 hover:text-white transition-all">Hapus</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadUsers() {
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'readUsers', session }) });
+            const json = await res.json();
+            document.getElementById('user-table-body').innerHTML = json.data.map(u => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-5 font-bold text-slate-700 text-sm">${u.namaLengkap}</td>
+                    <td class="p-5 text-slate-400 text-sm">${u.username}</td>
+                    <td class="p-5"><span class="px-2 py-1 text-[9px] font-black uppercase tracking-widest rounded-full ${u.role === 'Admin' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-500'}">${u.role}</span></td>
+                    <td class="p-5 text-right">
+                        <button onclick="openUserModal('${u.username}', '${encodeURIComponent(u.namaLengkap)}', '${u.role}')" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg">Edit</button>
+                        ${u.username !== session.username ? `<button onclick="deleteUser('${u.username}')" class="text-xs font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded-lg ml-1">Hapus</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openModal(id='', j='', d='', w='') {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('judul').value = j ? decodeURIComponent(j) : '';
+            document.getElementById('deskripsi').value = d ? decodeURIComponent(d) : '';
+            document.getElementById('waktu').value = w || '';
+            document.getElementById('modal-title').innerText = id ? 'Edit Laporan' : 'Tambah Laporan';
+            const modal = document.getElementById('data-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.querySelector('.bg-white').classList.add('modal-show'), 10);
+            document.body.classList.add('modal-active');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('data-modal');
+            modal.querySelector('.bg-white').classList.remove('modal-show');
+            setTimeout(() => { modal.classList.add('hidden'); document.body.classList.remove('modal-active'); }, 300);
+            document.getElementById('main-form').reset();
+            base64Image = "";
+        }
+
+        function openUserModal(u='', n='', r='User') {
+            document.getElementById('old-username').value = u;
+            document.getElementById('user-username').value = u;
+            document.getElementById('user-nama').value = n ? decodeURIComponent(n) : '';
+            document.getElementById('user-role').value = r;
+            document.getElementById('user-password').value = '';
+            document.getElementById('user-modal-title').innerText = u ? 'Edit Pengguna' : 'Tambah Pengguna';
+            const modal = document.getElementById('user-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.querySelector('.bg-white').classList.add('modal-show'), 10);
+        }
+
+        function closeUserModal() {
+            const modal = document.getElementById('user-modal');
+            modal.querySelector('.bg-white').classList.remove('modal-show');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        document.getElementById('main-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit');
+            btn.disabled = true; btn.innerText = "Menyimpan...";
+            const id = document.getElementById('edit-id').value;
+            const payload = {
+                action: id ? 'update' : 'create', id, session,
+                data: { judul: document.getElementById('judul').value, deskripsi: document.getElementById('deskripsi').value, waktu: document.getElementById('waktu').value, image: base64Image, mimeType: 'image/webp' }
+            };
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+            closeModal(); loadData();
+        };
+
+        document.getElementById('user-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const oldU = document.getElementById('old-username').value;
+            const payload = {
+                action: oldU ? 'adminUpdateUser' : 'adminAddUser', username: oldU, session,
+                data: { username: document.getElementById('user-username').value, namaLengkap: document.getElementById('user-nama').value, password: document.getElementById('user-password').value, role: document.getElementById('user-role').value }
+            };
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+            const json = await res.json();
+            if (json.success) { closeUserModal(); loadUsers(); } else { alert(json.message); }
+        };
+
+        async function deleteData(id) { if(confirm('Hapus laporan ini permanen?')) { await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id, session }) }); loadData(); } }
+        async function deleteUser(u) { if(confirm('Hapus user '+u+'?')) { await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'adminDeleteUser', username: u, session }) }); loadUsers(); } }
+
+        document.getElementById('image-input').onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const max = 1200; let w = img.width, h = img.height;
+                    if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    base64Image = canvas.toDataURL('image/webp', 0.8);
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        function logout() { localStorage.removeItem('user_session'); window.location.href = 'admin.html'; }
+        window.onload = loadData;
+    </script>
+</body>
+</html>

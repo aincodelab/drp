@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akses Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-900 flex items-center justify-center min-h-screen p-4 font-sans">
+    <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md transition-all duration-500">
+        <div class="text-center mb-8">
+            <h1 id="title" class="text-3xl font-extrabold text-slate-800">Masuk Panel</h1>
+            <p id="subtitle" class="text-sm text-slate-400 mt-2">Silakan masuk untuk mengelola laporan.</p>
+        </div>
+        
+        <form id="auth-form" class="space-y-5">
+            <div id="nama-container" class="hidden">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Nama Lengkap</label>
+                <input type="text" id="namaLengkap" class="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-xl outline-none focus:border-blue-500 transition-all">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Username</label>
+                <input type="text" id="username" required class="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-xl outline-none focus:border-blue-500 transition-all">
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Password</label>
+                <div class="relative">
+                    <input type="password" id="password" required class="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-xl outline-none focus:border-blue-500 transition-all pr-12">
+                    <button type="button" id="toggle-password" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors">
+                        <i data-lucide="eye" id="eye-icon" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <button type="submit" id="btn-submit" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95">Masuk Sekarang</button>
+            
+            <div class="text-center pt-4">
+                <span id="toggle-text" class="text-sm text-slate-500">Belum memiliki akun?</span> 
+                <button type="button" id="btn-toggle" class="text-sm text-blue-600 font-bold hover:underline ml-1 transition-all">Daftar Akun</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Inisialisasi Icon Lucide
+        lucide.createIcons();
+
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxUCiEzApV6XBTB9OIzTJ0ffK0x8sMmgTDPri_haTsJdMCZgRzUCQ10QrgAPr7LJPSV/exec';
+        let isLogin = true;
+
+        // Logika Toggle Password (Eye Icon)
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('toggle-password');
+        const eyeIcon = document.getElementById('eye-icon');
+
+        togglePasswordBtn.onclick = () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            
+            // Ganti icon eye ke eye-off
+            eyeIcon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+            lucide.createIcons(); // Re-render icon
+        };
+
+        // Logika Toggle Login/Register
+        document.getElementById('btn-toggle').onclick = () => {
+            isLogin = !isLogin;
+            document.getElementById('title').innerText = isLogin ? 'Masuk Panel' : 'Daftar Baru';
+            document.getElementById('subtitle').innerText = isLogin ? 'Silakan masuk untuk mengelola laporan.' : 'Buat akun Anda dalam beberapa detik.';
+            document.getElementById('btn-submit').innerText = isLogin ? 'Masuk Sekarang' : 'Daftar Sekarang';
+            document.getElementById('toggle-text').innerText = isLogin ? 'Belum memiliki akun?' : 'Sudah memiliki akun?';
+            document.getElementById('btn-toggle').innerText = isLogin ? 'Daftar Akun' : 'Masuk';
+            document.getElementById('nama-container').classList.toggle('hidden', isLogin);
+            document.getElementById('namaLengkap').required = !isLogin;
+        };
+
+        // Logika Form Submit
+        document.getElementById('auth-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit');
+            btn.disabled = true;
+            btn.innerText = "Memproses...";
+
+            const data = {
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value,
+                namaLengkap: document.getElementById('namaLengkap').value.trim()
+            };
+            const action = isLogin ? 'login' : 'register';
+
+            try {
+                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, data }) });
+                const json = await res.json();
+                if (json.success) {
+                    localStorage.setItem('user_session', JSON.stringify(json.data));
+                    window.location.href = 'dashboard.html';
+                } else {
+                    alert(json.message);
+                    btn.disabled = false;
+                    btn.innerText = isLogin ? "Masuk Sekarang" : "Daftar Sekarang";
+                }
+            } catch (err) {
+                alert("Kesalahan koneksi.");
+                btn.disabled = false;
+                btn.innerText = isLogin ? "Masuk Sekarang" : "Daftar Sekarang";
+            }
+        };
+    </script>
+</body>
+</html>
